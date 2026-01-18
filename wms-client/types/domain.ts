@@ -40,3 +40,36 @@ export interface StockInActions {
 }
 
 export interface UseStockInReturn extends StockInState, StockInActions {}
+
+// ============================================
+// Inventory List (재고 목록) Domain
+// ============================================
+
+export interface InventoryItem {
+  id: number;
+  skuCode: string;
+  productName: string;
+  color: string;
+  size: string;
+  price: number;
+  quantity: number;
+  location: string;
+}
+
+export interface InventoryListState {
+  items: InventoryItem[];
+  searchQuery: string;
+  page: number;
+  hasMore: boolean;
+  isLoading: boolean;
+  error: string | null;
+}
+
+export interface InventoryListActions {
+  onSearch: (query: string) => void;
+  onLoadMore: () => Promise<void>;
+}
+
+export interface UseInventoryListReturn
+  extends InventoryListState,
+    InventoryListActions {}
