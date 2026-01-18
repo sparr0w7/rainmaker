@@ -2,13 +2,14 @@
 
 import { useState } from "react";
 import type { UseStockInReturn, Product } from "@/types/domain";
+import { inventoryApi } from "@/lib/api/inventory";
 
 /**
  * Stock In Hook (입고 관리)
  * IDD: 비즈니스 로직을 UI로부터 완전히 분리
  */
 
-// Mock 상품 데이터베이스
+// Mock 상품 데이터베이스 (TODO: 백엔드 조회 API 구현 후 제거)
 const MOCK_PRODUCTS: Record<string, Product> = {
   "SKU001": {
     id: "1",
@@ -75,14 +76,28 @@ export function useStockIn(): UseStockInReturn {
     }
 
     setIsLoading(true);
+    setError(null);
 
-    // Mock API 호출 시뮬레이션
-    await new Promise((resolve) => setTimeout(resolve, 1000));
+    try {
+      // 실제 백엔드 API 호출
+      await inventoryApi.stockIn({
+        skuCode: product.skuCode,
+        productName: product.name,
+        color: product.options.color,
+        size: product.options.size,
+        price: product.price,
+        quantity,
+      });
 
-    // 성공 후 초기화
-    alert(`입고 완료!\n상품: ${product.name}\n수량: ${quantity}개`);
-    onReset();
-    setIsLoading(false);
+      // 성공 후 초기화
+      alert(`입고 완료!\n상품: ${product.name}\n수량: ${quantity}개`);
+      onReset();
+    } catch (err) {
+      console.error("입고 실패:", err);
+      setError("입고 처리 중 오류가 발생했습니다");
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const onReset = () => {
