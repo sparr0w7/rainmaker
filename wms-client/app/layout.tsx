@@ -1,7 +1,8 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
-import BottomNav from "@/components/layout/BottomNav";
+import { AuthProvider } from "@/components/providers/AuthProvider";
+import { LayoutContent } from "@/components/layout/LayoutContent";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -28,11 +29,9 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        {/* 메인 컨텐츠 - 하단 바에 가려지지 않게 pb-20 */}
-        <div className="pb-20">{children}</div>
-
-        {/* 하단 네비게이션 바 */}
-        <BottomNav />
+        <AuthProvider>
+          <LayoutContent>{children}</LayoutContent>
+        </AuthProvider>
       </body>
     </html>
   );

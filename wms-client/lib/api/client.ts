@@ -12,21 +12,18 @@ export const apiClient = axios.create({
   withCredentials: true,
 });
 
-// 요청 인터셉터 (필요시 토큰 추가 등)
-apiClient.interceptors.request.use(
-  (config) => {
-    // TODO: 인증 토큰 추가 로직
-    return config;
-  },
-  (error) => {
-    return Promise.reject(error);
-  }
-);
-
 // 응답 인터셉터 (에러 처리)
 apiClient.interceptors.response.use(
   (response) => response,
   (error) => {
+    // 401 Unauthorized: 인증 실패 시 로그인 페이지로 리다이렉트
+    if (error.response?.status === 401) {
+      // 로그인 페이지가 아닌 경우에만 리다이렉트
+      if (typeof window !== "undefined" && !window.location.pathname.includes("/login")) {
+        window.location.href = "/login";
+      }
+    }
+
     console.error("API Error:", error);
     return Promise.reject(error);
   }
