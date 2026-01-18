@@ -1,8 +1,8 @@
 package com.rainmaker.server.service;
 
+import com.rainmaker.server.domain.product.entity.*;
+import com.rainmaker.server.domain.product.repository.*;
 import com.rainmaker.server.dto.StockInRequest;
-import com.rainmaker.server.entity.Inventory;
-import com.rainmaker.server.repository.InventoryRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -15,30 +15,66 @@ import org.springframework.transaction.annotation.Transactional;
 @Transactional
 public class InventoryService {
 
+    private final ProductRepository productRepository;
+    private final ProductOptionRepository productOptionRepository;
     private final InventoryRepository inventoryRepository;
+    private final StockHistoryRepository stockHistoryRepository;
 
     /**
      * 입고 처리
-     * - 신규 상품: 재고 생성
-     * - 기존 상품: 수량 증가
+     * - SKU 없음: Product + ProductOption + Inventory 생성
+     * - SKU 있음: Inventory 수량 증가
+     * - StockHistory 기록
      */
     public void processStockIn(StockInRequest request) {
-        inventoryRepository.findBySkuCode(request.skuCode())
-                .ifPresentOrElse(
-                        // 기존 재고 있음 -> 수량 증가
-                        inventory -> inventory.increaseQuantity(request.quantity()),
-                        // 재고 없음 -> 새로 생성
-                        () -> {
-                            Inventory newInventory = Inventory.builder()
-                                    .skuCode(request.skuCode())
-                                    .productName(request.productName())
-                                    .color(request.color())
-                                    .size(request.size())
-                                    .price(request.price())
-                                    .quantity(request.quantity())
-                                    .build();
-                            inventoryRepository.save(newInventory);
-                        }
-                );
+        // 1. SKU 코드로 ProductOption 조회 또는 생성
+        ProductOption productOption = productOptionRepository.findBySkuCode(request.skuCode())
+                .orElseGet(() -> createProductAndOption(request));
+
+        // 2. Inventory 조회 또는 생성
+        Inventory inventory = inventoryRepository.findByProductOption(productOption)
+                .orElseGet(() -> {
+                    Inventory newInventory = Inventory.builder()
+                            .productOption(productOption)
+                            .location("기본 창고")
+                            .quantity(0)
+                            .build();
+                    return inventoryRepository.save(newInventory);
+                });
+
+        // 3. 재고 증가
+        inventory.increaseQuantity(request.quantity());
+
+        // 4. 입고 이력 기록
+        StockHistory history = StockHistory.builder()
+                .productOption(productOption)
+                .type(StockHistoryType.IN)
+                .quantity(request.quantity())
+                .snapshotQuantity(inventory.getQuantity())
+                .build();
+        stockHistoryRepository.save(history);
+    }
+
+    /**
+     * Product + ProductOption 생성
+     */
+    private ProductOption createProductAndOption(StockInRequest request) {
+        // Product 생성
+        Product product = Product.builder()
+                .name(request.productName())
+                .price(request.price())
+                .build();
+        productRepository.save(product);
+
+        // ProductOption 생성
+        ProductOption productOption = ProductOption.builder()
+                .color(request.color())
+                .size(request.size())
+                .skuCode(request.skuCode())
+                .build();
+        product.addProductOption(productOption);
+        productOptionRepository.save(productOption);
+
+        return productOption;
     }
 }
