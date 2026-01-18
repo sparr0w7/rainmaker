@@ -13,6 +13,7 @@ import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.authentication.rememberme.TokenBasedRememberMeServices;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
@@ -45,12 +46,14 @@ public class SecurityConfig {
                 .httpBasic(basic -> basic.disable())
 
                 // 세션 정책: IF_REQUIRED (필요시 세션 생성)
-                // TODO: Remember-Me 기능 추가 고려
-                //   - .rememberMe() 설정으로 "로그인 상태 유지" 기능 구현 가능
-                //   - 세션 타임아웃을 길게 설정 (예: 30일)하여 매번 로그인 불편함 해소
-                //   - 현재는 브라우저 자동완성 기능 사용 권장
                 .sessionManagement(session -> session
                         .sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED)
+                )
+
+                // Remember-Me 기능 (로그인 상태 유지 - 30일)
+                .rememberMe(rememberMe -> rememberMe
+                        .rememberMeServices(rememberMeServices())
+                        .key("rainmaker-remember-me-key")
                 )
 
                 // 인가 설정
@@ -101,5 +104,15 @@ public class SecurityConfig {
         provider.setUserDetailsService(userDetailsService);
         provider.setPasswordEncoder(passwordEncoder());
         return new ProviderManager(provider);
+    }
+
+    @Bean
+    public TokenBasedRememberMeServices rememberMeServices() {
+        TokenBasedRememberMeServices rememberMeServices =
+                new TokenBasedRememberMeServices("rainmaker-remember-me-key", userDetailsService);
+        rememberMeServices.setTokenValiditySeconds(30 * 24 * 60 * 60); // 30일
+        rememberMeServices.setCookieName("REMEMBER_ME");
+        rememberMeServices.setParameter("rememberMe");
+        return rememberMeServices;
     }
 }

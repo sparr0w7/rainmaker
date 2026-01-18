@@ -14,6 +14,9 @@ public record LoginRequest(
 
         @Schema(description = "비밀번호", example = "password")
         @NotBlank(message = "비밀번호는 필수입니다")
-        String password
+        String password,
+
+        @Schema(description = "로그인 상태 유지 (30일)", example = "true")
+        Boolean rememberMe
 ) {
 }

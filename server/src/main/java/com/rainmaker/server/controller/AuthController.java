@@ -8,6 +8,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -18,6 +19,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.web.authentication.rememberme.TokenBasedRememberMeServices;
 import org.springframework.security.web.context.HttpSessionSecurityContextRepository;
 import org.springframework.web.bind.annotation.*;
 
@@ -31,6 +33,7 @@ import org.springframework.web.bind.annotation.*;
 public class AuthController {
 
     private final AuthenticationManager authenticationManager;
+    private final TokenBasedRememberMeServices rememberMeServices;
 
     @Operation(
             summary = "로그인",
@@ -55,7 +58,8 @@ public class AuthController {
                     content = @Content(schema = @Schema(implementation = LoginRequest.class))
             )
             @Valid @RequestBody LoginRequest request,
-            HttpServletRequest httpRequest
+            HttpServletRequest httpRequest,
+            HttpServletResponse httpResponse
     ) {
         try {
             // 1. AuthenticationManager로 인증 수행
@@ -75,6 +79,11 @@ public class AuthController {
                     HttpSessionSecurityContextRepository.SPRING_SECURITY_CONTEXT_KEY,
                     securityContext
             );
+
+            // 4. Remember-Me 처리 (선택 시)
+            if (Boolean.TRUE.equals(request.rememberMe())) {
+                rememberMeServices.loginSuccess(httpRequest, httpResponse, authentication);
+            }
 
             return ResponseEntity.ok().build();
 

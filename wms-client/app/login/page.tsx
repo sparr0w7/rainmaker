@@ -12,10 +12,11 @@ export default function LoginPage() {
   const { login, isLoading, error } = useAuth();
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
+  const [rememberMe, setRememberMe] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    await login({ username, password });
+    await login({ username, password, rememberMe });
   };
 
   return (
@@ -80,6 +81,24 @@ export default function LoginPage() {
                 disabled={isLoading}
                 className="w-full h-14 px-4 text-lg border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100"
               />
+            </div>
+
+            {/* 로그인 상태 유지 체크박스 */}
+            <div className="flex items-center">
+              <input
+                id="rememberMe"
+                type="checkbox"
+                checked={rememberMe}
+                onChange={(e) => setRememberMe(e.target.checked)}
+                disabled={isLoading}
+                className="w-5 h-5 text-blue-600 border-gray-300 rounded focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
+              />
+              <label
+                htmlFor="rememberMe"
+                className="ml-3 text-lg text-gray-700 cursor-pointer select-none"
+              >
+                로그인 상태 유지 (30일)
+              </label>
             </div>
 
             {/* 로그인 버튼 */}
