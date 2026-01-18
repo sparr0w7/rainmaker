@@ -109,9 +109,19 @@ export function StockInPage() {
               >
                 -
               </button>
-              <div className="flex h-16 w-32 items-center justify-center rounded-lg border-2 border-border bg-background text-3xl font-bold">
-                {quantity}
-              </div>
+              <input
+                type="number"
+                inputMode="numeric"
+                pattern="[0-9]*"
+                value={quantity}
+                onChange={(e) => {
+                  const value = parseInt(e.target.value) || 1;
+                  onChangeQuantity(value - quantity);
+                }}
+                min="1"
+                disabled={isLoading}
+                className="flex h-16 w-32 items-center justify-center rounded-lg border-2 border-border bg-background text-center text-3xl font-bold focus:outline-none focus:ring-2 focus:ring-primary/20 disabled:opacity-50"
+              />
               <button
                 onClick={() => onChangeQuantity(1)}
                 disabled={isLoading}

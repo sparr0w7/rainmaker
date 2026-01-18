@@ -45,6 +45,10 @@ public class SecurityConfig {
                 .httpBasic(basic -> basic.disable())
 
                 // 세션 정책: IF_REQUIRED (필요시 세션 생성)
+                // TODO: Remember-Me 기능 추가 고려
+                //   - .rememberMe() 설정으로 "로그인 상태 유지" 기능 구현 가능
+                //   - 세션 타임아웃을 길게 설정 (예: 30일)하여 매번 로그인 불편함 해소
+                //   - 현재는 브라우저 자동완성 기능 사용 권장
                 .sessionManagement(session -> session
                         .sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED)
                 )
