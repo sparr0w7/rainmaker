@@ -2,8 +2,11 @@ package com.rainmaker.server.service;
 
 import com.rainmaker.server.domain.product.entity.*;
 import com.rainmaker.server.domain.product.repository.*;
+import com.rainmaker.server.dto.InventoryResponse;
 import com.rainmaker.server.dto.StockInRequest;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -53,6 +56,17 @@ public class InventoryService {
                 .snapshotQuantity(inventory.getQuantity())
                 .build();
         stockHistoryRepository.save(history);
+    }
+
+    /**
+     * 재고 목록 조회 (페이징)
+     * - Fetch Join으로 N+1 문제 방지
+     * - 최근 업데이트 순으로 정렬
+     */
+    @Transactional(readOnly = true)
+    public Page<InventoryResponse> getInventoryList(Pageable pageable) {
+        Page<Inventory> inventories = inventoryRepository.findAllWithProductAndOption(pageable);
+        return inventories.map(InventoryResponse::from);
     }
 
     /**
