@@ -2,6 +2,7 @@ package com.rainmaker.server.controller;
 
 import com.rainmaker.server.dto.InventoryResponse;
 import com.rainmaker.server.dto.StockInRequest;
+import com.rainmaker.server.dto.StockOutRequest;
 import com.rainmaker.server.service.InventoryService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -58,6 +59,39 @@ public class AdminInventoryController {
     ) {
         inventoryService.processStockIn(request);
         return ResponseEntity.ok().build();
+    }
+
+    @Operation(
+            summary = "상품 출고",
+            description = "바코드 스캔을 통해 상품을 출고(판매) 처리합니다. " +
+                         "재고가 부족한 경우 400 에러를 반환합니다."
+    )
+    @ApiResponses({
+            @ApiResponse(
+                    responseCode = "200",
+                    description = "출고 처리 성공"
+            ),
+            @ApiResponse(
+                    responseCode = "400",
+                    description = "잘못된 요청 (재고 부족, Validation 실패 등)",
+                    content = @Content(schema = @Schema(implementation = String.class))
+            )
+    })
+    @PostMapping("/outbound")
+    public ResponseEntity<Void> stockOut(
+            @io.swagger.v3.oas.annotations.parameters.RequestBody(
+                    description = "출고 요청 정보",
+                    required = true,
+                    content = @Content(schema = @Schema(implementation = StockOutRequest.class))
+            )
+            @Valid @RequestBody StockOutRequest request
+    ) {
+        try {
+            inventoryService.processStockOut(request);
+            return ResponseEntity.ok().build();
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().build();
+        }
     }
 
     @Operation(

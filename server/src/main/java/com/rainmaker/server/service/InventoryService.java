@@ -4,6 +4,7 @@ import com.rainmaker.server.domain.product.entity.*;
 import com.rainmaker.server.domain.product.repository.*;
 import com.rainmaker.server.dto.InventoryResponse;
 import com.rainmaker.server.dto.StockInRequest;
+import com.rainmaker.server.dto.StockOutRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -52,6 +53,39 @@ public class InventoryService {
         StockHistory history = StockHistory.builder()
                 .productOption(productOption)
                 .type(StockHistoryType.IN)
+                .quantity(request.quantity())
+                .snapshotQuantity(inventory.getQuantity())
+                .build();
+        stockHistoryRepository.save(history);
+    }
+
+    /**
+     * 출고 처리
+     * - SKU로 재고 조회
+     * - 재고 부족 시 예외 발생
+     * - 재고 감소
+     * - StockHistory 기록
+     */
+    public void processStockOut(StockOutRequest request) {
+        // 1. SKU 코드로 ProductOption 조회
+        ProductOption productOption = productOptionRepository.findBySkuCode(request.skuCode())
+                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 SKU 코드입니다: " + request.skuCode()));
+
+        // 2. Inventory 조회
+        Inventory inventory = inventoryRepository.findByProductOption(productOption)
+                .orElseThrow(() -> new IllegalArgumentException("재고가 존재하지 않습니다"));
+
+        // 3. 재고 감소 (재고 부족 시 예외 발생)
+        try {
+            inventory.decreaseQuantity(request.quantity());
+        } catch (IllegalStateException e) {
+            throw new IllegalArgumentException(e.getMessage());
+        }
+
+        // 4. 출고 이력 기록
+        StockHistory history = StockHistory.builder()
+                .productOption(productOption)
+                .type(StockHistoryType.OUT)
                 .quantity(request.quantity())
                 .snapshotQuantity(inventory.getQuantity())
                 .build();
